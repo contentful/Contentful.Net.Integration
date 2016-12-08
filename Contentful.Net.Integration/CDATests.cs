@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using Contentful.Core.Models;
 using System.Linq;
 using Contentful.Core.Search;
+using System.Threading;
 
 namespace Contentful.Net.Integration
 {
@@ -17,7 +18,8 @@ namespace Contentful.Net.Integration
 
         public ContentfulCDATests()
         {
-            var httpClient = new HttpClient();
+
+            var httpClient = new HttpClient(new TestEndpointMessageHandler());
 
             _client = new ContentfulClient(httpClient, new ContentfulOptions()
             {
@@ -349,6 +351,20 @@ namespace Contentful.Net.Integration
             var res = await _client.GetEntriesAsync<Entry<dynamic>>("/nyancat?locale=en-US");
 
             Assert.Equal(0, res.Count());
+        }
+    }
+
+    public class TestEndpointMessageHandler : HttpClientHandler
+    {
+        protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
+        {
+            var requestUrl = request.RequestUri.ToString();
+
+            requestUrl = requestUrl.Replace("https://cdn.contentful.com/", "http://127.0.0.1:5000/");
+
+            request.RequestUri = new Uri(requestUrl);
+
+            return await base.SendAsync(request, cancellationToken);
         }
     }
 }
