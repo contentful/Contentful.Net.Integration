@@ -15,10 +15,8 @@ namespace Contentful.Net.Integration
     {
         private ContentfulClient _client;
 
-
         public ContentfulCDATests()
         {
-
             var httpClient = new HttpClient(new TestEndpointMessageHandler());
 
             _client = new ContentfulClient(httpClient, new ContentfulOptions()
@@ -348,9 +346,10 @@ namespace Contentful.Net.Integration
         [Fact]
         public async Task GetEntryByLocale()
         {
-            var res = await _client.GetEntriesAsync<Entry<dynamic>>("/nyancat?locale=en-US");
+            var res = await _client.GetEntryAsync<Entry<dynamic>>("nyancat", "?locale=en-US");
 
-            Assert.Equal(0, res.Count());
+            Assert.Equal("Nyan Cat", res.Fields.name.ToString());
+            Assert.Equal("rainbow", res.Fields.color.ToString());
         }
     }
 
@@ -360,7 +359,9 @@ namespace Contentful.Net.Integration
         {
             var requestUrl = request.RequestUri.ToString();
 
-            requestUrl = requestUrl.Replace("https://cdn.contentful.com/", "http://127.0.0.1:5000/");
+            requestUrl = requestUrl
+                .Replace("https://cdn.contentful.com/", "http://127.0.0.1:5000/")
+                .Replace("https://api.contentful.com/", "http://127.0.0.1:5000/");
 
             request.RequestUri = new Uri(requestUrl);
 
