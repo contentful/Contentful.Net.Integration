@@ -357,6 +357,11 @@ namespace Contentful.Net.Integration
     {
         protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
         {
+            if(Environment.GetEnvironmentVariable("CONTENTFUL_RUN_WITHOUT_PROXY") == "true")
+            {
+                return await base.SendAsync(request, cancellationToken);
+            }
+
             var requestUrl = request.RequestUri.ToString();
 
             requestUrl = requestUrl
