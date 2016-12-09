@@ -1,9 +1,11 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 15
-VisualStudioVersion = 15.0.25914.0
+VisualStudioVersion = 15.0.25928.0
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Contentful.Net.Integration", "Contentful.Net.Integration\Contentful.Net.Integration.csproj", "{90A0AA3A-4542-4E99-8C12-B014311C171D}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Contentful.Net.CMA", "Contentful.Net.CMA\Contentful.Net.CMA.csproj", "{D748747A-AD75-49BE-A935-0E18174795C9}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -15,6 +17,10 @@ Global
 		{90A0AA3A-4542-4E99-8C12-B014311C171D}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{90A0AA3A-4542-4E99-8C12-B014311C171D}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{90A0AA3A-4542-4E99-8C12-B014311C171D}.Release|Any CPU.Build.0 = Release|Any CPU
+		{D748747A-AD75-49BE-A935-0E18174795C9}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D748747A-AD75-49BE-A935-0E18174795C9}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D748747A-AD75-49BE-A935-0E18174795C9}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D748747A-AD75-49BE-A935-0E18174795C9}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
