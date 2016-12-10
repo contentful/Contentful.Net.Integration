@@ -150,7 +150,7 @@ namespace Contentful.Net.Integration
         private readonly ContentfulManagementClient _client;
         public SpaceFixture()
         {
-            var httpClient = new HttpClient();
+            var httpClient = new HttpClient(new TestEndpointMessageHandler());
             var managementToken = Environment.GetEnvironmentVariable("CONTENTFUL_ACCESS_TOKEN");
             _client = new ContentfulManagementClient(httpClient, new ContentfulOptions()
             {
