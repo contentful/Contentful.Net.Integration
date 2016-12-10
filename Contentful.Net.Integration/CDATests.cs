@@ -356,9 +356,9 @@ namespace Contentful.Net.Integration
         [Theory]
         [InlineData("en-US", "Nyan Cat")]
         [InlineData("tlh", "Nyan vIghro'")]
-        public async Task GetEntryByLocale(string locale, string expectedName)
+        public async Task GetEntryByLocale(string l, string expectedName)
         {
-            var res = await _client.GetEntryAsync<Entry<dynamic>>("nyancat", $"?locale={locale}");
+            var res = await _client.GetEntryAsync<Entry<dynamic>>("nyancat", $"?locale={l}");
 
             Assert.Equal(expectedName, res.Fields.name.ToString());
             Assert.Equal("rainbow", res.Fields.color.ToString());
