@@ -296,6 +296,16 @@ namespace Contentful.Net.Integration
         }
 
         [Fact]
+        public async Task GetEntriesAndOrderSeveral()
+        {
+            var res = await _client.GetEntriesCollectionAsync<Entry<dynamic>>(QueryBuilder.New()
+                .OrderBy(new SortOrderBuilder("sys.createdAt").ThenBy("sys.updatedAt").Build()));
+
+            Assert.Equal(10, res.Count());
+            Assert.Equal("Nyan Cat", res.First().Fields.name.ToString());
+        }
+
+        [Fact]
         public async Task GetEntriesAndLimit()
         {
             var res = await _client.GetEntriesCollectionAsync<Entry<dynamic>>(QueryBuilder.New().Limit(3));

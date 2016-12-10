@@ -1,6 +1,7 @@
 ﻿using Contentful.Core;
 using Contentful.Core.Configuration;
 using Contentful.Core.Models;
+using Contentful.Net.CMA;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -12,11 +13,12 @@ using Xunit;
 
 namespace Contentful.Net.Integration
 {
+    [TestCaseOrderer("Contentful.Net.CMA.CustomTestCaseOrderer", "Contentful.Net.CMA")]
     public class ContentfulCMATests : IClassFixture<SpaceFixture>
     {
         private ContentfulManagementClient _client;
         private string _spaceId = "";
-        private string _contentTypeId = "";
+        private string _contentTypeId = "contenttype";
 
         public ContentfulCMATests(SpaceFixture fixture)
         {
@@ -24,18 +26,18 @@ namespace Contentful.Net.Integration
             var httpClient = new HttpClient(new TestEndpointMessageHandler());
             var managementToken = Environment.GetEnvironmentVariable("CONTENTFUL_ACCESS_TOKEN");
             _spaceId = fixture.SpaceId;
-            _contentTypeId = fixture.ContentTypeId;
             _client = new ContentfulManagementClient(httpClient, new ContentfulOptions()
             {
                 DeliveryApiKey = "123",
                 ManagementApiKey = managementToken,
-                SpaceId = _spaceId,
+                SpaceId = fixture.SpaceId,
                 UsePreviewApi = false
             });
 
         }
 
         [Fact]
+        [Order(5)]
         public async Task GetASpace()
         {
             var space = await _client.GetSpaceAsync(_spaceId);
@@ -44,6 +46,7 @@ namespace Contentful.Net.Integration
         }
 
         [Fact]
+        [Order(10)]
         public async Task GetAllSpaces()
         {
             var spaces = await _client.GetSpacesAsync();
@@ -52,6 +55,7 @@ namespace Contentful.Net.Integration
         }
 
         [Fact]
+        [Order(20)]
         public async Task UpdateSpaceName()
         {
             var space = await _client.UpdateSpaceNameAsync(_spaceId, "knuckleburger", 1);
@@ -62,6 +66,36 @@ namespace Contentful.Net.Integration
         }
 
         [Fact]
+        [Order(25)]
+        public async Task CreateContentType()
+        {
+            var contentType = new ContentType();
+            contentType.SystemProperties = new SystemProperties()
+            {
+                Id = _contentTypeId
+            };
+            contentType.Name = "Cool content";
+            contentType.Fields = new List<Field>()
+            {
+                new Field()
+                {
+                    Name = "Field1",
+                    Id = "field1",
+                    @Type = "Text"
+                },
+                new Field()
+                {
+                    Name = "Field2",
+                    Id = "field2",
+                    @Type = "Text"
+                }
+            };
+
+            var contenttype = await _client.CreateOrUpdateContentTypeAsync(contentType, _spaceId);
+        }
+
+        [Fact]
+        [Order(30)]
         public async Task UpdateContentType()
         {
             var contentType = new ContentType();
@@ -86,19 +120,35 @@ namespace Contentful.Net.Integration
                 }
             };
 
-            var updatedContentType = await _client.CreateOrUpdateContentTypeAsync(contentType, version: 1);
+            var updatedContentType = await _client.CreateOrUpdateContentTypeAsync(contentType, _spaceId, version: 1);
 
             Assert.Equal(2, updatedContentType.Fields.Count);
             Assert.Equal("Cool content changed", updatedContentType.Name);
         }
+
+        [Fact]
+        [Order(40)]
+        public async Task GetContentType()
+        {
+            var contentType = await _client.GetContentTypeAsync(_contentTypeId, _spaceId);
+
+            Assert.Equal(_contentTypeId, contentType.SystemProperties.Id);
+        }
+
+        [Fact]
+        [Order(1000)]
+        public async Task DeleteSpace()
+        {
+            await _client.DeleteSpaceAsync(_spaceId);
+        }
+
     }
 
     public class SpaceFixture : IDisposable
     {
         public string SpaceId { get; set; }
-        public string ContentTypeId => "contenttype";
         private readonly ContentfulManagementClient _client;
-        public  SpaceFixture()
+        public SpaceFixture()
         {
             var httpClient = new HttpClient();
             var managementToken = Environment.GetEnvironmentVariable("CONTENTFUL_ACCESS_TOKEN");
@@ -113,35 +163,19 @@ namespace Contentful.Net.Integration
             var space = _client.CreateSpaceAsync("dotnet-test-space", "en-US").Result;
 
             SpaceId = space.SystemProperties.Id;
-
-            var contentType = new ContentType();
-            contentType.SystemProperties = new SystemProperties()
-            {
-                Id = ContentTypeId
-            };
-            contentType.Name = "Cool content";
-            contentType.Fields = new List<Field>()
-            {
-                new Field()
-                {
-                    Name = "Field1",
-                    Id = "field1",
-                    @Type = "Text"
-                },
-                new Field()
-                {
-                    Name = "Field2",
-                    Id = "field2",
-                    @Type = "Text"
-                }
-            };
-
-            var contenttype = _client.CreateOrUpdateContentTypeAsync(contentType, SpaceId).Result;
         }
 
         public void Dispose()
         {
-            _client.DeleteSpaceAsync(SpaceId);
+            try
+            {
+                _client.DeleteSpaceAsync(SpaceId);
+            }
+            catch(Exception)
+            {
+                //We don't really wanna do anything here, 
+                //just try to delete the space if it's left over for some reason
+            }
         }
     }
 
