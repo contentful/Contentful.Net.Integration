@@ -353,12 +353,14 @@ namespace Contentful.Net.Integration
             Assert.Equal(expectedAssets, res.Count());
         }
 
-        [Fact]
-        public async Task GetEntryByLocale()
+        [Theory]
+        [InlineData("en-US", "Nyan Cat")]
+        [InlineData("tlh", "Nyan vIghro'")]
+        public async Task GetEntryByLocale(string locale, string expectedName)
         {
-            var res = await _client.GetEntryAsync<Entry<dynamic>>("nyancat", "?locale=en-US");
+            var res = await _client.GetEntryAsync<Entry<dynamic>>("nyancat", $"?locale={locale}");
 
-            Assert.Equal("Nyan Cat", res.Fields.name.ToString());
+            Assert.Equal(expectedName, res.Fields.name.ToString());
             Assert.Equal("rainbow", res.Fields.color.ToString());
         }
     }
