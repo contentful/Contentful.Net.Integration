@@ -142,6 +142,8 @@ namespace Contentful.Net.Integration
         [Order(50)]
         public async Task GetAllContentTypes()
         {
+            //It seems we need to give the API a chance to catch up...
+            Thread.Sleep(1000);
             var contentTypes = await _client.GetContentTypesAsync();
 
             Assert.Equal(1, contentTypes.Count());
@@ -154,19 +156,6 @@ namespace Contentful.Net.Integration
             var contentType = await _client.ActivateContentTypeAsync(_contentTypeId, 2);
 
             Assert.Equal(3, contentType.SystemProperties.Version);
-        }
-
-        [Fact]
-        [Order(70)]
-        public async Task UnpublishContentType()
-        {
-            var contentTypes = await _client.GetActivatedContentTypesAsync();
-
-            Assert.Equal(1, contentTypes.Count());
-            await _client.DeactivateContentTypeAsync(_contentTypeId);
-
-            contentTypes = await _client.GetActivatedContentTypesAsync();
-            Assert.Empty(contentTypes);
         }
 
         [Fact]
@@ -185,13 +174,24 @@ namespace Contentful.Net.Integration
                 new JProperty("field1", new JObject(new JProperty("en-US", "bla"))),
                 new JProperty("field2", new JObject(new JProperty("en-US", "blue")))
             );
-            var contentTypes = await _client.GetContentTypesAsync();
-
-            await _client.ActivateContentTypeAsync(_contentTypeId, contentTypes.First().SystemProperties.Version.Value);
 
             entry = await _client.CreateOrUpdateEntryAsync(entry, contentTypeId: _contentTypeId);
 
             Assert.Equal("bla", entry.Fields.field1["en-US"].ToString());
+        }
+
+
+        [Fact]
+        [Order(700)]
+        public async Task UnpublishContentType()
+        {
+            var contentTypes = await _client.GetActivatedContentTypesAsync();
+
+            Assert.Equal(1, contentTypes.Count());
+            await _client.DeactivateContentTypeAsync(_contentTypeId);
+
+            contentTypes = await _client.GetActivatedContentTypesAsync();
+            Assert.Empty(contentTypes);
         }
 
         [Fact]
