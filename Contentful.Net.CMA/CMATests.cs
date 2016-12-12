@@ -2,6 +2,7 @@
 using Contentful.Core.Configuration;
 using Contentful.Core.Models;
 using Contentful.Net.CMA;
+using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -92,6 +93,8 @@ namespace Contentful.Net.Integration
             };
 
             var contenttype = await _client.CreateOrUpdateContentTypeAsync(contentType, _spaceId);
+
+            Assert.Equal(2, contenttype.Fields.Count);
         }
 
         [Fact]
@@ -133,6 +136,62 @@ namespace Contentful.Net.Integration
             var contentType = await _client.GetContentTypeAsync(_contentTypeId, _spaceId);
 
             Assert.Equal(_contentTypeId, contentType.SystemProperties.Id);
+        }
+
+        [Fact]
+        [Order(50)]
+        public async Task GetAllContentTypes()
+        {
+            var contentTypes = await _client.GetContentTypesAsync();
+
+            Assert.Equal(1, contentTypes.Count());
+        }
+
+        [Fact]
+        [Order(60)]
+        public async Task PublishContentType()
+        {
+            var contentType = await _client.ActivateContentTypeAsync(_contentTypeId, 2);
+
+            Assert.Equal(3, contentType.SystemProperties.Version);
+        }
+
+        [Fact]
+        [Order(70)]
+        public async Task UnpublishContentType()
+        {
+            var contentTypes = await _client.GetActivatedContentTypesAsync();
+
+            Assert.Equal(1, contentTypes.Count());
+            await _client.DeactivateContentTypeAsync(_contentTypeId);
+
+            contentTypes = await _client.GetActivatedContentTypesAsync();
+            Assert.Empty(contentTypes);
+        }
+
+        [Fact]
+        [Order(80)]
+        public async Task CreateEntry()
+        {
+            var entry = new Entry<dynamic>();
+
+            entry.SystemProperties = new SystemProperties()
+            {
+                Id = "entry1"
+            };
+
+            entry.Fields = new JObject
+            (
+                new JProperty("field1", new JObject(new JProperty("en-US", "bla"))),
+                new JProperty("field2", new JObject(new JProperty("en-US", "blue")))
+            );
+            var contentTypes = await _client.GetContentTypesAsync();
+
+            await _client.ActivateContentTypeAsync(_contentTypeId, contentTypes.First().SystemProperties.Version.Value);
+
+            entry = await _client.CreateOrUpdateEntryAsync(entry, contentTypeId: _contentTypeId);
+
+            Assert.Equal("bla", entry.Fields.field1["en-US"].ToString());
         }
 
         [Fact]
