@@ -478,6 +478,13 @@ namespace Contentful.Net.Integration
         }
 
         [Fact]
+        [Order(720)]
+        public async Task DeleteContentType()
+        {
+            await _client.DeleteContentTypeAsync(_contentTypeId);
+        }
+
+        [Fact]
         [Order(1000)]
         public async Task DeleteSpace()
         {
