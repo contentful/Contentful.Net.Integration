@@ -1,6 +1,8 @@
 ﻿using Contentful.Core;
 using Contentful.Core.Configuration;
+using Contentful.Core.Errors;
 using Contentful.Core.Models;
+using Contentful.Core.Models.Management;
 using Contentful.Net.CMA;
 using Newtonsoft.Json.Linq;
 using System;
@@ -143,7 +145,7 @@ namespace Contentful.Net.Integration
         public async Task GetAllContentTypes()
         {
             //It seems we need to give the API a chance to catch up...
-            Thread.Sleep(1000);
+            Thread.Sleep(5000);
             var contentTypes = await _client.GetContentTypesAsync();
 
             Assert.Equal(1, contentTypes.Count());
@@ -180,11 +182,292 @@ namespace Contentful.Net.Integration
             Assert.Equal("bla", entry.Fields.field1["en-US"].ToString());
         }
 
+        [Fact]
+        [Order(90)]
+        public async Task GetAllEntries()
+        {
+            //It seems we need to give the API a chance to catch up...
+            Thread.Sleep(5000);
+            var entries = await _client.GetEntriesCollectionAsync<Entry<dynamic>>();
+
+            Assert.Equal(1, entries.Count());
+        }
+
+        [Fact]
+        [Order(100)]
+        public async Task GetEntry()
+        {
+            var entry = await _client.GetEntryAsync("entry1");
+
+            Assert.Equal(1, entry.SystemProperties.Version);
+            Assert.Equal("bla", entry.Fields.field1["en-US"].ToString());
+        }
+
+        [Fact]
+        [Order(110)]
+        public async Task PublishEntry()
+        {
+            var entry = await _client.PublishEntryAsync("entry1", 1);
+
+            Assert.Equal(2, entry.SystemProperties.Version);
+            Assert.Equal("bla", entry.Fields.field1["en-US"].ToString());
+        }
+
+        [Fact]
+        [Order(120)]
+        public async Task UnpublishEntry()
+        {
+            var entry = await _client.UnpublishEntryAsync("entry1", 2);
+
+            Assert.Equal(3, entry.SystemProperties.Version);
+            Assert.Equal("bla", entry.Fields.field1["en-US"].ToString());
+        }
+
+        [Fact]
+        [Order(130)]
+        public async Task ArchiveEntry()
+        {
+            var entry = await _client.ArchiveEntryAsync("entry1", 3);
+
+            Assert.Equal(4, entry.SystemProperties.Version);
+            Assert.Equal("bla", entry.Fields.field1["en-US"].ToString());
+        }
+
+        [Fact]
+        [Order(140)]
+        public async Task UnarchiveEntry()
+        {
+            var entry = await _client.UnarchiveEntryAsync("entry1", 4);
+
+            Assert.Equal(5, entry.SystemProperties.Version);
+            Assert.Equal("bla", entry.Fields.field1["en-US"].ToString());
+        }
+
+        [Fact]
+        [Order(145)]
+        public async Task GetAssets()
+        {
+            var assets = await _client.GetAssetsCollectionAsync();
+
+            Assert.Empty(assets);
+
+            var publishedAssets = await _client.GetPublishedAssetsCollectionAsync();
+
+            Assert.Empty(publishedAssets);
+        }
+
+        [Fact]
+        [Order(150)]
+        public async Task CreateAsset()
+        {
+            var asset = new ManagementAsset();
+            asset.SystemProperties = new SystemProperties()
+            {
+                Id = "asset1"
+            };
+            asset.Title = new Dictionary<string, string>()
+            {
+                { "en-US", "AssetMaster" }
+            };
+            asset.Files = new Dictionary<string, File>
+            {
+                { "en-US", new File()
+                    {
+                        ContentType ="image/jpeg",
+                        FileName = "moby.png",
+                        UploadUrl = "https://robertlinde.se/assets/top/moby-top.png"
+                    }
+                }
+            };
+
+            var createdAsset = await _client.CreateOrUpdateAssetAsync(asset);
+
+            Assert.Equal("AssetMaster", createdAsset.Title["en-US"]);
+        }
+
+        [Fact]
+        [Order(160)]
+        public async Task GetAsset()
+        {
+            var asset = await _client.GetAssetAsync("asset1");
+
+            Assert.Equal("AssetMaster", asset.Title["en-US"]);
+        }
+
+        [Fact]
+        [Order(170)]
+        public async Task ProcessAsset()
+        {
+            await _client.ProcessAssetAsync("asset1",1 , "en-US");
+
+            Assert.True(true);
+        }
+
+        [Fact]
+        [Order(180)]
+        public async Task PublishAsset()
+        {
+            //Give processing a chance to finish...
+            Thread.Sleep(5000);
+            ManagementAsset asset = null;
+
+            asset = await _client.PublishAssetAsync("asset1", 2);
+
+            Assert.Equal("AssetMaster", asset.Title["en-US"]);
+        }
+
+        [Fact]
+        [Order(190)]
+        public async Task UnpublishAsset()
+        {
+            var asset = await _client.UnpublishAssetAsync("asset1", 3);
+
+            Assert.Equal("AssetMaster", asset.Title["en-US"]);
+        }
+
+        [Fact]
+        [Order(200)]
+        public async Task ArchiveAsset()
+        {
+            var asset = await _client.ArchiveAssetAsync("asset1", 4);
+
+            Assert.Equal("AssetMaster", asset.Title["en-US"]);
+        }
+
+        [Fact]
+        [Order(210)]
+        public async Task UnarchiveAsset()
+        {
+            var asset = await _client.UnarchiveAssetAsync("asset1", 5);
+
+            Assert.Equal("AssetMaster", asset.Title["en-US"]);
+        }
+
+        
+
+        [Fact]
+        [Order(220)]
+        public async Task GetLocales()
+        {
+            var locales = await _client.GetLocalesCollectionAsync();
+
+            Assert.Equal(1, locales.Total);
+        }
+
+        [Fact]
+        [Order(230)]
+        public async Task CreateGetUpdateDeleteLocale()
+        {
+            var locale = new Locale();
+            locale.Code = "c-sharp";
+            locale.Name = "See Sharp";
+            locale.FallbackCode = "en-US";
+            locale.Optional = true;
+            locale.ContentDeliveryApi = true;
+            locale.ContentManagementApi = true;
+
+            var createdLocale = await _client.CreateLocaleAsync(locale);
+
+            Assert.Equal("c-sharp", createdLocale.Code);
+
+            locale = await _client.GetLocaleAsync(createdLocale.SystemProperties.Id);
+
+            Assert.Equal("See Sharp", locale.Name);
+
+            locale.Name = "c#";
+
+            locale = await _client.UpdateLocaleAsync(locale);
+
+            Assert.Equal("c#", locale.Name);
+
+            await _client.DeleteLocaleAsync(locale.SystemProperties.Id);
+        }
+
+        [Fact]
+        [Order(240)]
+        public async Task GetAllWebHooks()
+        {
+            var hooks = await _client.GetWebHooksCollectionAsync();
+
+            Assert.Equal(0, hooks.Total);
+        }
+
+        [Fact]
+        [Order(250)]
+        public async Task CreateGetUpdateDeleteWebHook()
+        {
+            var webHook = new WebHook();
+            webHook.Name = "Captain Hook";
+            webHook.Url = "https://robertlinde.se";
+            webHook.HttpBasicPassword = "Pass";
+            webHook.HttpBasicUsername = "User";
+            webHook.Headers = new List<KeyValuePair<string, string>>();
+            webHook.Headers.Add(new KeyValuePair<string, string>("ben", "long"));
+            webHook.Topics = new List<string>()
+            {
+                "Entry.*"
+            };
+
+            var createdHook = await _client.CreateWebHookAsync(webHook);
+
+            Assert.Equal("Captain Hook", createdHook.Name);
+
+            webHook.Name = "Dustin Hoffman";
+            webHook.SystemProperties = new SystemProperties()
+            {
+                Id = createdHook.SystemProperties.Id
+            };
+
+            var updatedHook = await _client.CreateOrUpdateWebHookAsync(webHook);
+
+            Assert.Equal("Dustin Hoffman", updatedHook.Name);
+
+            webHook = await _client.GetWebHookAsync(updatedHook.SystemProperties.Id);
+
+            Assert.Equal("Dustin Hoffman", webHook.Name);
+
+            await _client.DeleteWebHookAsync(updatedHook.SystemProperties.Id);
+        }
+
+        [Fact]
+        [Order(610)]
+        public async Task GetApiKeys()
+        {
+            var keys = await _client.GetAllApiKeysAsync();
+
+            Assert.Equal(0, keys.Total);
+        }
+
+        [Fact]
+        [Order(620)]
+        public async Task CreateApiKey()
+        {
+            var createdKey = await _client.CreateApiKeyAsync("Keyport", "blahblah");
+
+            Assert.Equal("Keyport", createdKey.Name);
+            Assert.NotNull(createdKey.AccessToken);
+        }
+
+        [Fact]
+        [Order(600)]
+        public async Task DeleteEntry()
+        {
+            await _client.DeleteEntryAsync("entry1", 1);
+        }
+
+        [Fact]
+        [Order(610)]
+        public async Task DeleteAsset()
+        {
+            await _client.DeleteAssetAsync("asset1", 5);
+        }
 
         [Fact]
         [Order(700)]
         public async Task UnpublishContentType()
         {
+            //It seems we need to give the API a chance to catch up...
+            Thread.Sleep(2000);
             var contentTypes = await _client.GetActivatedContentTypesAsync();
 
             Assert.Equal(1, contentTypes.Count());
