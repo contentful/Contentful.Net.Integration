@@ -164,6 +164,8 @@ namespace Contentful.Net.Integration
         [Order(80)]
         public async Task CreateEntry()
         {
+            //It seems we need to give the API a chance to catch up...
+            Thread.Sleep(5000);
             var entry = new Entry<dynamic>();
 
             entry.SystemProperties = new SystemProperties()
