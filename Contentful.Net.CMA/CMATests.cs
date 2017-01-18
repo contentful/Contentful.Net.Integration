@@ -164,8 +164,6 @@ namespace Contentful.Net.Integration
         [Order(80)]
         public async Task CreateEntry()
         {
-            //It seems we need to give the API a chance to catch up...
-            Thread.Sleep(5000);
             var entry = new Entry<dynamic>();
 
             entry.SystemProperties = new SystemProperties()
@@ -511,7 +509,7 @@ namespace Contentful.Net.Integration
                 UsePreviewApi = false
             });
 
-            var space = _client.CreateSpaceAsync("dotnet-test-space", "en-US").Result;
+            var space = _client.CreateSpaceAsync("dotnet-test-space", "en-US", organisation: "0w9KPTOuMqrBnj9GpkDAwF").Result;
 
             SpaceId = space.SystemProperties.Id;
         }
