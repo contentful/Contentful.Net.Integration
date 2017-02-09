@@ -187,7 +187,7 @@ namespace Contentful.Net.Integration
         public async Task GetAllEntries()
         {
             //It seems we need to give the API a chance to catch up...
-            Thread.Sleep(5000);
+            Thread.Sleep(10000);
             var entries = await _client.GetEntriesCollectionAsync<Entry<dynamic>>();
 
             Assert.Equal(1, entries.Count());
