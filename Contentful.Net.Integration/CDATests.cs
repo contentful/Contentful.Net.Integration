@@ -31,7 +31,7 @@ namespace Contentful.Net.Integration
         [Fact]
         public async Task GetAllEntries()
         {
-            var entries = await _client.GetEntriesAsync<Entry<dynamic>>();
+            var entries = await _client.GetEntries<dynamic>();
 
             Assert.Equal(10, entries.Count());
         }
@@ -39,7 +39,7 @@ namespace Contentful.Net.Integration
         [Fact]
         public async Task GetContentTypes()
         {
-            var contentTypes = await _client.GetContentTypesAsync();
+            var contentTypes = await _client.GetContentTypes();
 
             Assert.Equal(4, contentTypes.Count());
         }
@@ -50,7 +50,7 @@ namespace Contentful.Net.Integration
         [InlineData("dog", 3, "Bark!", "name")]
         public async Task GetContentTypeById(string id, int expectedFieldLength, string expectedDescription, string expectedDisplayField)
         {
-            var contentType = await _client.GetContentTypeAsync(id);
+            var contentType = await _client.GetContentType(id);
 
             Assert.Equal(expectedFieldLength, contentType.Fields.Count);
             Assert.Equal(expectedDescription, contentType.Description);
@@ -62,16 +62,16 @@ namespace Contentful.Net.Integration
         [InlineData("happycat", "Happy Cat", "gray")]
         public async Task GetSpecificEntries(string id, string expectedName, string expectedColor)
         {
-            var entry = await _client.GetEntryAsync<Entry<dynamic>>(id);
+            var entry = await _client.GetEntry<dynamic>(id);
 
-            Assert.Equal(expectedName, entry.Fields.name.ToString());
-            Assert.Equal(expectedColor, entry.Fields.color.ToString());
+            Assert.Equal(expectedName, entry.name.ToString());
+            Assert.Equal(expectedColor, entry.color.ToString());
         }
 
         [Fact]
         public async Task GetSpace()
         {
-            var space = await _client.GetSpaceAsync();
+            var space = await _client.GetSpace();
 
             Assert.Equal("Contentful Example API", space.Name);
             Assert.Equal("cfexampleapi", space.SystemProperties.Id);
@@ -82,15 +82,13 @@ namespace Contentful.Net.Integration
         [Fact]
         public async Task GetAssets()
         {
-            var assets = await _client.GetAssetsAsync();
+            var assets = await _client.GetAssets();
 
             Assert.Equal(4, assets.Count());
-
-            Assert.Collection(assets, 
-                (a) => Assert.Equal("Doge", a.Title),
-                (a) => Assert.Equal("Happy Cat", a.Title),
-                (a) => Assert.Equal("Nyan Cat", a.Title),
-                (a) => Assert.Equal("Jake", a.Title));
+            Assert.Contains(assets, c => c.Title == "Doge");
+            Assert.Contains(assets, c => c.Title == "Happy Cat");
+            Assert.Contains(assets, c => c.Title == "Nyan Cat");
+            Assert.Contains(assets, c => c.Title == "Jake");
         }
 
         [Theory]
@@ -100,7 +98,7 @@ namespace Contentful.Net.Integration
         [InlineData("jake", "Jake", null)]
         public async Task GetSpecificAsset(string id, string expectedTitle, string expectedDescription)
         {
-            var asset = await _client.GetAssetAsync(id);
+            var asset = await _client.GetAsset(id);
 
             Assert.Equal(expectedTitle, asset.Title);
             Assert.Equal(expectedDescription, asset.Description);
@@ -109,7 +107,7 @@ namespace Contentful.Net.Integration
         [Fact]
         public async Task SyncInitial()
         {
-            var res = await _client.SyncInitialAsync(SyncType.Asset);
+            var res = await _client.SyncInitial(SyncType.Asset);
 
             Assert.Equal(4, res.Assets.Count());
         }
@@ -117,7 +115,7 @@ namespace Contentful.Net.Integration
         [Fact]
         public async Task SyncInitialWithContentType()
         {
-            var res = await _client.SyncInitialAsync(SyncType.Entry, "cat");
+            var res = await _client.SyncInitial(SyncType.Entry, "cat");
 
             Assert.Equal(3, res.Entries.Count());
         }
@@ -125,17 +123,17 @@ namespace Contentful.Net.Integration
         [Fact]
         public async Task SyncNextResult()
         {
-            var res = await _client.SyncInitialAsync(SyncType.Entry);
+            var res = await _client.SyncInitial(SyncType.Entry);
 
-            var nextResult = await _client.SyncNextResultAsync(res.NextSyncUrl);
+            var nextResult = await _client.SyncNextResult(res.NextSyncUrl);
 
-            Assert.Equal(0, nextResult.Entries.Count());
+            Assert.Empty(nextResult.Entries);
         }
 
         [Fact]
         public async Task GetEntriesByContentType()
         {
-            var res = await _client.GetEntriesCollectionAsync<Entry<dynamic>>(QueryBuilder<Entry<dynamic>>.New.ContentTypeIs("cat"));
+            var res = await _client.GetEntries(QueryBuilder<dynamic>.New.ContentTypeIs("cat"));
 
             Assert.Equal(3, res.Count());
         }
@@ -143,16 +141,16 @@ namespace Contentful.Net.Integration
         [Fact]
         public async Task GetEntriesByField()
         {
-            var res = await _client.GetEntriesCollectionAsync<Entry<dynamic>>(QueryBuilder<Entry<dynamic>>.New.FieldEquals("sys.id", "nyancat"));
+            var res = await _client.GetEntries(QueryBuilder<dynamic>.New.FieldEquals("sys.id", "nyancat"));
 
-            Assert.Equal(1, res.Count());
-            Assert.Equal("rainbow", res.First().Fields.color.ToString());
+            Assert.Single(res);
+            Assert.Equal("rainbow", res.First().color.ToString());
         }
 
         [Fact]
         public async Task GetEntriesByFieldNotEquals()
         {
-            var res = await _client.GetEntriesCollectionAsync<Entry<dynamic>>(QueryBuilder<Entry<dynamic>>.New.FieldDoesNotEqual("sys.id", "nyancat"));
+            var res = await _client.GetEntries(QueryBuilder<dynamic>.New.FieldDoesNotEqual("sys.id", "nyancat"));
 
             Assert.Equal(9, res.Count());
         }
@@ -160,51 +158,51 @@ namespace Contentful.Net.Integration
         [Fact]
         public async Task GetEntriesByFieldAndType()
         {
-            var res = await _client.GetEntriesCollectionAsync<Entry<dynamic>>(QueryBuilder<Entry<dynamic>>.New.ContentTypeIs("cat").FieldEquals("fields.color", "rainbow"));
+            var res = await _client.GetEntries(QueryBuilder<dynamic>.New.ContentTypeIs("cat").FieldEquals("fields.color", "rainbow"));
 
-            Assert.Equal(1, res.Count());
-            Assert.Equal("rainbow", res.First().Fields.color.ToString());
-            Assert.Equal("nyancat", res.First().SystemProperties.Id);
+            Assert.Single(res);
+            Assert.Equal("rainbow", res.First().color.ToString());
+            Assert.Equal("nyancat", res.First().sys.id.ToString());
         }
 
         [Fact]
         public async Task GetEntriesByFieldIncludes()
         {
-            var res = await _client.GetEntriesCollectionAsync<Entry<dynamic>>(QueryBuilder<Entry<dynamic>>.New.FieldIncludes("sys.id", new[] { "nyancat", "jake" }));
+            var res = await _client.GetEntries(QueryBuilder<dynamic>.New.FieldIncludes("sys.id", new[] { "nyancat", "jake" }));
 
             Assert.Equal(2, res.Count());
-            Assert.Equal("rainbow", res.First().Fields.color.ToString());
-            Assert.Equal("Jake", res.Last().Fields.name.ToString());
+            Assert.Contains(res, c => c.color?.ToString() == "rainbow");
+            Assert.Contains(res, c => c.name?.ToString() == "Jake");
         }
 
         [Fact]
         public async Task GetEntriesByFieldIncludesAndType()
         {
-            var res = await _client.GetEntriesCollectionAsync<Entry<dynamic>>(QueryBuilder<Entry<dynamic>>.New
+            var res = await _client.GetEntries(QueryBuilder<dynamic>.New
                 .ContentTypeIs("cat").FieldIncludes("fields.color", new[] { "rainbow", "gray" }));
 
             Assert.Equal(2, res.Count());
-            Assert.Equal("rainbow", res.Last().Fields.color.ToString());
-            Assert.Equal("nyancat", res.Last().SystemProperties.Id);
-            Assert.Equal("gray", res.First().Fields.color.ToString());
-            Assert.Equal("happycat", res.First().SystemProperties.Id);
+            Assert.Equal("rainbow", res.Last().color.ToString());
+            Assert.Equal("nyancat", res.Last().sys.id.ToString());
+            Assert.Equal("gray", res.First().color.ToString());
+            Assert.Equal("happycat", res.First().sys.id.ToString());
         }
 
         [Fact]
         public async Task GetEntriesByFieldExcludesAndType()
         {
-            var res = await _client.GetEntriesCollectionAsync<Entry<dynamic>>(QueryBuilder<Entry<dynamic>>.New
+            var res = await _client.GetEntries(QueryBuilder<dynamic>.New
                 .ContentTypeIs("cat").FieldExcludes("fields.color", new[] { "rainbow", "gray" }));
 
-            Assert.Equal(1, res.Count());
-            Assert.Equal("orange", res.Last().Fields.color.ToString());
-            Assert.Equal("garfield", res.Last().SystemProperties.Id);
+            Assert.Single(res);
+            Assert.Equal("orange", res.Last().color.ToString());
+            Assert.Equal("garfield", res.Last().sys.id.ToString());
         }
 
         [Fact]
         public async Task GetEntriesByFieldExistsAndType()
         {
-            var res = await _client.GetEntriesCollectionAsync<Entry<dynamic>>(QueryBuilder<Entry<dynamic>>.New
+            var res = await _client.GetEntries(QueryBuilder<dynamic>.New
                 .ContentTypeIs("cat").FieldExists("fields.color"));
 
             Assert.Equal(3, res.Count());
@@ -213,102 +211,102 @@ namespace Contentful.Net.Integration
         [Fact]
         public async Task GetEntriesByFieldLessThanOrEqualTo()
         {
-            var res = await _client.GetEntriesCollectionAsync<Entry<dynamic>>(QueryBuilder<Entry<dynamic>>.New.FieldLessThanOrEqualTo("sys.createdAt", "2013-08-28"));
+            var res = await _client.GetEntries(QueryBuilder<dynamic>.New.FieldLessThanOrEqualTo("sys.createdAt", "2013-08-28"));
 
             Assert.Equal(5, res.Count());
-            Assert.Contains(res, c => c.SystemProperties.Id == "nyancat");
+            Assert.Contains(res, c => c.sys.id.ToString() == "nyancat");
         }
 
         [Fact]
         public async Task GetEntriesByFieldGreaterThanOrEqualTo()
         {
-            var res = await _client.GetEntriesCollectionAsync<Entry<dynamic>>(QueryBuilder<Entry<dynamic>>.New.FieldGreaterThanOrEqualTo("sys.createdAt", "2013-08-28"));
+            var res = await _client.GetEntries(QueryBuilder<dynamic>.New.FieldGreaterThanOrEqualTo("sys.createdAt", "2013-08-28"));
 
             Assert.Equal(5, res.Count());
-            Assert.DoesNotContain(res, c => c.SystemProperties.Id == "nyancat");
+            Assert.DoesNotContain(res, c => c.sys.id.ToString() == "nyancat");
         }
 
         [Fact]
         public async Task GetEntriesByQuery()
         {
-            var res = await _client.GetEntriesCollectionAsync<Entry<dynamic>>(QueryBuilder<Entry<dynamic>>.New.FullTextSearch("nyan"));
+            var res = await _client.GetEntries(QueryBuilder<dynamic>.New.FullTextSearch("nyan"));
 
-            Assert.Equal(1, res.Count());
-            Assert.Contains(res, c => c.SystemProperties.Id == "nyancat");
+            Assert.Single(res);
+            Assert.Contains(res, c => c.sys.id.ToString() == "nyancat");
         }
 
         [Fact]
         public async Task GetEntriesByFieldMatchesAndType()
         {
-            var res = await _client.GetEntriesCollectionAsync<Entry<dynamic>>(QueryBuilder<Entry<dynamic>>.New
+            var res = await _client.GetEntries(QueryBuilder<dynamic>.New
                 .ContentTypeIs("cat").FieldMatches("fields.color", "rain"));
 
-            Assert.Equal(1, res.Count());
-            Assert.Equal("rainbow", res.Last().Fields.color.ToString());
-            Assert.Equal("nyancat", res.Last().SystemProperties.Id);
+            Assert.Single(res);
+            Assert.Equal("rainbow", res.Last().color.ToString());
+            Assert.Equal("nyancat", res.Last().sys.id.ToString());
         }
 
         [Fact]
         public async Task GetEntriesByNearByAndType()
         {
-            var res = await _client.GetEntriesCollectionAsync<Entry<dynamic>>(QueryBuilder<Entry<dynamic>>.New
-                .ContentTypeIs("1t9IbcfdCk6m04uISSsaIK").InProximityOf("fields.center", "38, -122"));
+            var res = await _client.GetEntries(QueryBuilder<dynamic>.New
+                .ContentTypeIs("1t9IbcfdCk6m04uISSsaIK").InProximityOf("fields.center", "38,-122"));
 
             Assert.Equal(4, res.Count());
 
             Assert.Collection(res, 
-                (c) => Assert.Equal("San Francisco", c.Fields.name.ToString()),
-                (c) => Assert.Equal("London", c.Fields.name.ToString()),
-                (c) => Assert.Equal("Paris", c.Fields.name.ToString()),
-                (c) => Assert.Equal("Berlin", c.Fields.name.ToString()));
+                (c) => Assert.Equal("San Francisco", c.name.ToString()),
+                (c) => Assert.Equal("London", c.name.ToString()),
+                (c) => Assert.Equal("Paris", c.name.ToString()),
+                (c) => Assert.Equal("Berlin", c.name.ToString()));
         }
 
         [Fact]
         public async Task GetEntriesByWithinAreaAndType()
         {
-            var res = await _client.GetEntriesCollectionAsync<Entry<dynamic>>(QueryBuilder<Entry<dynamic>>.New
+            var res = await _client.GetEntries(QueryBuilder<dynamic>.New
                 .ContentTypeIs("1t9IbcfdCk6m04uISSsaIK").WithinArea("fields.center", "40", "-124", "36", "-120"));
 
-            Assert.Equal(1, res.Count());
+            Assert.Single(res);
 
             Assert.Collection(res,
-                (c) => Assert.Equal("San Francisco", c.Fields.name.ToString()));
+                (c) => Assert.Equal("San Francisco", c.name.ToString()));
         }
 
         [Fact]
         public async Task GetEntriesAndOrder()
         {
-            var res = await _client.GetEntriesCollectionAsync<Entry<dynamic>>(QueryBuilder<Entry<dynamic>>.New
-                .OrderBy(SortOrderBuilder<Entry<dynamic>>.New("sys.createdAt").Build()));
+            var res = await _client.GetEntries(QueryBuilder<dynamic>.New
+                .OrderBy(SortOrderBuilder<dynamic>.New("sys.createdAt").Build()));
 
             Assert.Equal(10, res.Count());
-            Assert.Equal("Nyan Cat", res.First().Fields.name.ToString());
+            Assert.Equal("Nyan Cat", res.First().name.ToString());
         }
 
         [Fact]
         public async Task GetEntriesAndOrderReversed()
         {
-            var res = await _client.GetEntriesCollectionAsync<Entry<dynamic>>(QueryBuilder<Entry<dynamic>>.New
-                .OrderBy(SortOrderBuilder<Entry<dynamic>>.New("sys.createdAt", SortOrder.Reversed).Build()));
+            var res = await _client.GetEntries(QueryBuilder<dynamic>.New
+                .OrderBy(SortOrderBuilder<dynamic>.New("sys.createdAt", SortOrder.Reversed).Build()));
 
             Assert.Equal(10, res.Count());
-            Assert.Equal("San Francisco", res.First().Fields.name.ToString());
+            Assert.Equal("San Francisco", res.First().name.ToString());
         }
 
         [Fact]
         public async Task GetEntriesAndOrderSeveral()
         {
-            var res = await _client.GetEntriesCollectionAsync<Entry<dynamic>>(QueryBuilder<Entry<dynamic>>.New
-                .OrderBy(SortOrderBuilder<Entry<dynamic>>.New("sys.createdAt").ThenBy("sys.updatedAt").Build()));
+            var res = await _client.GetEntries(QueryBuilder<dynamic>.New
+                .OrderBy(SortOrderBuilder<dynamic>.New("sys.createdAt").ThenBy("sys.updatedAt").Build()));
 
             Assert.Equal(10, res.Count());
-            Assert.Equal("Nyan Cat", res.First().Fields.name.ToString());
+            Assert.Equal("Nyan Cat", res.First().name.ToString());
         }
 
         [Fact]
         public async Task GetEntriesAndLimit()
         {
-            var res = await _client.GetEntriesCollectionAsync<Entry<dynamic>>(QueryBuilder<Entry<dynamic>>.New.Limit(3));
+            var res = await _client.GetEntries(QueryBuilder<dynamic>.New.Limit(3));
 
             Assert.Equal(3, res.Count());
             Assert.Equal(10, res.Total);
@@ -317,7 +315,7 @@ namespace Contentful.Net.Integration
         [Fact]
         public async Task GetEntriesAndSkip()
         {
-            var res = await _client.GetEntriesCollectionAsync<Entry<dynamic>>(QueryBuilder<Entry<dynamic>>.New.Skip(3));
+            var res = await _client.GetEntries(QueryBuilder<dynamic>.New.Skip(3));
 
             Assert.Equal(7, res.Count());
             Assert.Equal(10, res.Total);
@@ -326,7 +324,7 @@ namespace Contentful.Net.Integration
         [Fact]
         public async Task GetEntriesAndInclude()
         {
-            var res = await _client.GetEntriesCollectionAsync<Entry<dynamic>>(QueryBuilder<Entry<dynamic>>.New.Include(3));
+            var res = await _client.GetEntries(QueryBuilder<dynamic>.New.Include(3));
 
             Assert.Equal(10, res.Count());
             Assert.Equal(10, res.Total);
@@ -336,10 +334,10 @@ namespace Contentful.Net.Integration
         [Fact]
         public async Task GetEntriesByFieldLinking()
         {
-            var res = await _client.GetEntriesCollectionAsync<Entry<dynamic>>(QueryBuilder<Entry<dynamic>>.New.ContentTypeIs("cat").FieldEquals("fields.bestFriend.sys.id", "nyancat"));
+            var res = await _client.GetEntries(QueryBuilder<dynamic>.New.ContentTypeIs("cat").FieldEquals("fields.bestFriend.sys.id", "nyancat"));
 
-            Assert.Equal(1, res.Count());
-            Assert.Equal("gray", res.First().Fields.color.ToString());
+            Assert.Single(res);
+            Assert.Equal("gray", res.First().color.ToString());
         }
 
         [Theory]
@@ -348,7 +346,7 @@ namespace Contentful.Net.Integration
         [InlineData(MimeTypeRestriction.Presentation, 0)]
         public async Task GetAssetsByMimeType(MimeTypeRestriction restriction, int expectedAssets)
         {
-            var res = await _client.GetAssetsAsync(QueryBuilder<Asset>.New.MimeTypeIs(restriction));
+            var res = await _client.GetAssets(QueryBuilder<Asset>.New.MimeTypeIs(restriction));
 
             Assert.Equal(expectedAssets, res.Count());
         }
@@ -358,10 +356,10 @@ namespace Contentful.Net.Integration
         [InlineData("tlh", "Nyan vIghro'")]
         public async Task GetEntryByLocale(string locale, string expectedName)
         {
-            var res = await _client.GetEntryAsync<Entry<dynamic>>("nyancat", QueryBuilder<Entry<dynamic>>.New.LocaleIs(locale));
+            var res = await _client.GetEntry("nyancat", QueryBuilder<dynamic>.New.LocaleIs(locale));
 
-            Assert.Equal(expectedName, res.Fields.name.ToString());
-            Assert.Equal("rainbow", res.Fields.color.ToString());
+            Assert.Equal(expectedName, res.name.ToString());
+            Assert.Equal("rainbow", res.color.ToString());
         }
     }
 
@@ -371,13 +369,13 @@ namespace Contentful.Net.Integration
         {
             if(Environment.GetEnvironmentVariable("CONTENTFUL_RUN_WITHOUT_PROXY") == "true")
             {
-                return await base.SendAsync(request, cancellationToken);
+                //return await base.SendAsync(request, cancellationToken);
             }
 
             var requestUrl = request.RequestUri.ToString();
 
             requestUrl = requestUrl
-                .Replace("https://cdn.contentful.com/", "http://127.0.0.1:5000/");
+                .Replace("https://cdn.contentful.com/", "http://localhost:62933/");
 
             request.RequestUri = new Uri(requestUrl);
 

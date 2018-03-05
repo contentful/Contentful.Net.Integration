@@ -43,7 +43,7 @@ namespace Contentful.Net.Integration
         [Order(5)]
         public async Task GetASpace()
         {
-            var space = await _client.GetSpaceAsync(_spaceId);
+            var space = await _client.GetSpace(_spaceId);
 
             Assert.Equal("dotnet-test-space", space.Name);
         }
@@ -52,19 +52,19 @@ namespace Contentful.Net.Integration
         [Order(10)]
         public async Task GetAllSpaces()
         {
-            var spaces = await _client.GetSpacesAsync();
+            var spaces = await _client.GetSpaces();
 
-            Assert.Contains(spaces, c => c.Name == "dotnet-test-space");
+            Assert.Contains(spaces, c => c.Name == "blog space");
         }
 
         [Fact]
         [Order(20)]
         public async Task UpdateSpaceName()
         {
-            var space = await _client.UpdateSpaceNameAsync(_spaceId, "knuckleburger", 1);
+            var space = await _client.UpdateSpaceName(_spaceId, "knuckleburger", 1);
             Assert.Equal("knuckleburger", space.Name);
             space.Name = "dotnet-test-space";
-            space = await _client.UpdateSpaceNameAsync(space);
+            space = await _client.UpdateSpaceName(space);
             Assert.Equal("dotnet-test-space", space.Name);
         }
 
@@ -94,7 +94,7 @@ namespace Contentful.Net.Integration
                 }
             };
 
-            var contenttype = await _client.CreateOrUpdateContentTypeAsync(contentType, _spaceId);
+            var contenttype = await _client.CreateOrUpdateContentType(contentType, _spaceId);
 
             Assert.Equal(2, contenttype.Fields.Count);
         }
@@ -125,7 +125,7 @@ namespace Contentful.Net.Integration
                 }
             };
 
-            var updatedContentType = await _client.CreateOrUpdateContentTypeAsync(contentType, _spaceId, version: 1);
+            var updatedContentType = await _client.CreateOrUpdateContentType(contentType, _spaceId, version: 1);
 
             Assert.Equal(2, updatedContentType.Fields.Count);
             Assert.Equal("Cool content changed", updatedContentType.Name);
@@ -135,7 +135,7 @@ namespace Contentful.Net.Integration
         [Order(40)]
         public async Task GetContentType()
         {
-            var contentType = await _client.GetContentTypeAsync(_contentTypeId, _spaceId);
+            var contentType = await _client.GetContentType(_contentTypeId, _spaceId);
 
             Assert.Equal(_contentTypeId, contentType.SystemProperties.Id);
         }
@@ -146,16 +146,16 @@ namespace Contentful.Net.Integration
         {
             //It seems we need to give the API a chance to catch up...
             Thread.Sleep(5000);
-            var contentTypes = await _client.GetContentTypesAsync();
+            var contentTypes = await _client.GetContentTypes();
 
-            Assert.Equal(1, contentTypes.Count());
+            Assert.Single(contentTypes);
         }
 
         [Fact]
         [Order(60)]
         public async Task PublishContentType()
         {
-            var contentType = await _client.ActivateContentTypeAsync(_contentTypeId, 2);
+            var contentType = await _client.ActivateContentType(_contentTypeId, 2);
 
             Assert.Equal(3, contentType.SystemProperties.Version);
         }
@@ -177,7 +177,7 @@ namespace Contentful.Net.Integration
                 new JProperty("field2", new JObject(new JProperty("en-US", "blue")))
             );
 
-            entry = await _client.CreateOrUpdateEntryAsync(entry, contentTypeId: _contentTypeId);
+            entry = await _client.CreateOrUpdateEntry(entry, contentTypeId: _contentTypeId);
 
             Assert.Equal("bla", entry.Fields.field1["en-US"].ToString());
         }
@@ -188,16 +188,16 @@ namespace Contentful.Net.Integration
         {
             //It seems we need to give the API a chance to catch up...
             Thread.Sleep(10000);
-            var entries = await _client.GetEntriesCollectionAsync<Entry<dynamic>>();
+            var entries = await _client.GetEntriesCollection<dynamic>();
 
-            Assert.Equal(1, entries.Count());
+            Assert.Single(entries);
         }
 
         [Fact]
         [Order(100)]
         public async Task GetEntry()
         {
-            var entry = await _client.GetEntryAsync("entry1");
+            var entry = await _client.GetEntry("entry1");
 
             Assert.Equal(1, entry.SystemProperties.Version);
             Assert.Equal("bla", entry.Fields.field1["en-US"].ToString());
@@ -207,7 +207,7 @@ namespace Contentful.Net.Integration
         [Order(110)]
         public async Task PublishEntry()
         {
-            var entry = await _client.PublishEntryAsync("entry1", 1);
+            var entry = await _client.PublishEntry("entry1", 1);
 
             Assert.Equal(2, entry.SystemProperties.Version);
             Assert.Equal("bla", entry.Fields.field1["en-US"].ToString());
@@ -217,7 +217,7 @@ namespace Contentful.Net.Integration
         [Order(120)]
         public async Task UnpublishEntry()
         {
-            var entry = await _client.UnpublishEntryAsync("entry1", 2);
+            var entry = await _client.UnpublishEntry("entry1", 2);
 
             Assert.Equal(3, entry.SystemProperties.Version);
             Assert.Equal("bla", entry.Fields.field1["en-US"].ToString());
@@ -227,7 +227,7 @@ namespace Contentful.Net.Integration
         [Order(130)]
         public async Task ArchiveEntry()
         {
-            var entry = await _client.ArchiveEntryAsync("entry1", 3);
+            var entry = await _client.ArchiveEntry("entry1", 3);
 
             Assert.Equal(4, entry.SystemProperties.Version);
             Assert.Equal("bla", entry.Fields.field1["en-US"].ToString());
@@ -237,7 +237,7 @@ namespace Contentful.Net.Integration
         [Order(140)]
         public async Task UnarchiveEntry()
         {
-            var entry = await _client.UnarchiveEntryAsync("entry1", 4);
+            var entry = await _client.UnarchiveEntry("entry1", 4);
 
             Assert.Equal(5, entry.SystemProperties.Version);
             Assert.Equal("bla", entry.Fields.field1["en-US"].ToString());
@@ -247,11 +247,11 @@ namespace Contentful.Net.Integration
         [Order(145)]
         public async Task GetAssets()
         {
-            var assets = await _client.GetAssetsCollectionAsync();
+            var assets = await _client.GetAssetsCollection();
 
             Assert.Empty(assets);
 
-            var publishedAssets = await _client.GetPublishedAssetsCollectionAsync();
+            var publishedAssets = await _client.GetPublishedAssetsCollection();
 
             Assert.Empty(publishedAssets);
         }
@@ -280,7 +280,7 @@ namespace Contentful.Net.Integration
                 }
             };
 
-            var createdAsset = await _client.CreateOrUpdateAssetAsync(asset);
+            var createdAsset = await _client.CreateOrUpdateAsset(asset);
 
             Assert.Equal("AssetMaster", createdAsset.Title["en-US"]);
         }
@@ -289,7 +289,7 @@ namespace Contentful.Net.Integration
         [Order(160)]
         public async Task GetAsset()
         {
-            var asset = await _client.GetAssetAsync("asset1");
+            var asset = await _client.GetAsset("asset1");
 
             Assert.Equal("AssetMaster", asset.Title["en-US"]);
         }
@@ -298,7 +298,7 @@ namespace Contentful.Net.Integration
         [Order(170)]
         public async Task ProcessAsset()
         {
-            await _client.ProcessAssetAsync("asset1",1 , "en-US");
+            await _client.ProcessAsset("asset1",1 , "en-US");
 
             Assert.True(true);
         }
@@ -311,7 +311,7 @@ namespace Contentful.Net.Integration
             Thread.Sleep(5000);
             ManagementAsset asset = null;
 
-            asset = await _client.PublishAssetAsync("asset1", 2);
+            asset = await _client.PublishAsset("asset1", 2);
 
             Assert.Equal("AssetMaster", asset.Title["en-US"]);
         }
@@ -320,7 +320,7 @@ namespace Contentful.Net.Integration
         [Order(190)]
         public async Task UnpublishAsset()
         {
-            var asset = await _client.UnpublishAssetAsync("asset1", 3);
+            var asset = await _client.UnpublishAsset("asset1", 3);
 
             Assert.Equal("AssetMaster", asset.Title["en-US"]);
         }
@@ -329,7 +329,7 @@ namespace Contentful.Net.Integration
         [Order(200)]
         public async Task ArchiveAsset()
         {
-            var asset = await _client.ArchiveAssetAsync("asset1", 4);
+            var asset = await _client.ArchiveAsset("asset1", 4);
 
             Assert.Equal("AssetMaster", asset.Title["en-US"]);
         }
@@ -338,7 +338,7 @@ namespace Contentful.Net.Integration
         [Order(210)]
         public async Task UnarchiveAsset()
         {
-            var asset = await _client.UnarchiveAssetAsync("asset1", 5);
+            var asset = await _client.UnarchiveAsset("asset1", 5);
 
             Assert.Equal("AssetMaster", asset.Title["en-US"]);
         }
@@ -349,7 +349,7 @@ namespace Contentful.Net.Integration
         [Order(220)]
         public async Task GetLocales()
         {
-            var locales = await _client.GetLocalesCollectionAsync();
+            var locales = await _client.GetLocalesCollection();
 
             Assert.Equal(1, locales.Total);
         }
@@ -366,28 +366,28 @@ namespace Contentful.Net.Integration
             locale.ContentDeliveryApi = true;
             locale.ContentManagementApi = true;
 
-            var createdLocale = await _client.CreateLocaleAsync(locale);
+            var createdLocale = await _client.CreateLocale(locale);
 
             Assert.Equal("c-sharp", createdLocale.Code);
 
-            locale = await _client.GetLocaleAsync(createdLocale.SystemProperties.Id);
+            locale = await _client.GetLocale(createdLocale.SystemProperties.Id);
 
             Assert.Equal("See Sharp", locale.Name);
 
             locale.Name = "c#";
 
-            locale = await _client.UpdateLocaleAsync(locale);
+            locale = await _client.UpdateLocale(locale);
 
             Assert.Equal("c#", locale.Name);
 
-            await _client.DeleteLocaleAsync(locale.SystemProperties.Id);
+            await _client.DeleteLocale(locale.SystemProperties.Id);
         }
 
         [Fact]
         [Order(240)]
         public async Task GetAllWebHooks()
         {
-            var hooks = await _client.GetWebHooksCollectionAsync();
+            var hooks = await _client.GetWebhooksCollection();
 
             Assert.Equal(0, hooks.Total);
         }
@@ -396,7 +396,7 @@ namespace Contentful.Net.Integration
         [Order(250)]
         public async Task CreateGetUpdateDeleteWebHook()
         {
-            var webHook = new WebHook();
+            var webHook = new Webhook();
             webHook.Name = "Captain Hook";
             webHook.Url = "https://robertlinde.se";
             webHook.HttpBasicPassword = "Pass";
@@ -408,7 +408,7 @@ namespace Contentful.Net.Integration
                 "Entry.*"
             };
 
-            var createdHook = await _client.CreateWebHookAsync(webHook);
+            var createdHook = await _client.CreateWebhook(webHook);
 
             Assert.Equal("Captain Hook", createdHook.Name);
 
@@ -418,22 +418,22 @@ namespace Contentful.Net.Integration
                 Id = createdHook.SystemProperties.Id
             };
 
-            var updatedHook = await _client.CreateOrUpdateWebHookAsync(webHook);
+            var updatedHook = await _client.CreateOrUpdateWebhook(webHook);
 
             Assert.Equal("Dustin Hoffman", updatedHook.Name);
 
-            webHook = await _client.GetWebHookAsync(updatedHook.SystemProperties.Id);
+            webHook = await _client.GetWebhook(updatedHook.SystemProperties.Id);
 
             Assert.Equal("Dustin Hoffman", webHook.Name);
 
-            await _client.DeleteWebHookAsync(updatedHook.SystemProperties.Id);
+            await _client.DeleteWebhook(updatedHook.SystemProperties.Id);
         }
 
         [Fact]
         [Order(610)]
         public async Task GetApiKeys()
         {
-            var keys = await _client.GetAllApiKeysAsync();
+            var keys = await _client.GetAllApiKeys();
 
             Assert.Equal(0, keys.Total);
         }
@@ -442,7 +442,7 @@ namespace Contentful.Net.Integration
         [Order(620)]
         public async Task CreateApiKey()
         {
-            var createdKey = await _client.CreateApiKeyAsync("Keyport", "blahblah");
+            var createdKey = await _client.CreateApiKey("Keyport", "blahblah");
 
             Assert.Equal("Keyport", createdKey.Name);
             Assert.NotNull(createdKey.AccessToken);
@@ -452,14 +452,14 @@ namespace Contentful.Net.Integration
         [Order(600)]
         public async Task DeleteEntry()
         {
-            await _client.DeleteEntryAsync("entry1", 1);
+            await _client.DeleteEntry("entry1", 1);
         }
 
         [Fact]
         [Order(610)]
         public async Task DeleteAsset()
         {
-            await _client.DeleteAssetAsync("asset1", 5);
+            await _client.DeleteAsset("asset1", 5);
         }
 
         [Fact]
@@ -468,12 +468,12 @@ namespace Contentful.Net.Integration
         {
             //It seems we need to give the API a chance to catch up...
             Thread.Sleep(2000);
-            var contentTypes = await _client.GetActivatedContentTypesAsync();
+            var contentTypes = await _client.GetActivatedContentTypes();
 
-            Assert.Equal(1, contentTypes.Count());
-            await _client.DeactivateContentTypeAsync(_contentTypeId);
+            Assert.Single(contentTypes);
+            await _client.DeactivateContentType(_contentTypeId);
 
-            contentTypes = await _client.GetActivatedContentTypesAsync();
+            contentTypes = await _client.GetActivatedContentTypes();
             Assert.Empty(contentTypes);
         }
 
@@ -481,14 +481,14 @@ namespace Contentful.Net.Integration
         [Order(720)]
         public async Task DeleteContentType()
         {
-            await _client.DeleteContentTypeAsync(_contentTypeId);
+            await _client.DeleteContentType(_contentTypeId);
         }
 
         [Fact]
         [Order(1000)]
         public async Task DeleteSpace()
         {
-            await _client.DeleteSpaceAsync(_spaceId);
+            await _client.DeleteSpace(_spaceId);
         }
 
     }
@@ -509,7 +509,7 @@ namespace Contentful.Net.Integration
                 UsePreviewApi = false
             });
 
-            var space = _client.CreateSpaceAsync("dotnet-test-space", "en-US", organisation: "0w9KPTOuMqrBnj9GpkDAwF").Result;
+            var space = _client.CreateSpace("dotnet-test-space", "en-US", organisation: "0w9KPTOuMqrBnj9GpkDAwF").Result;
 
             SpaceId = space.SystemProperties.Id;
         }
@@ -518,7 +518,7 @@ namespace Contentful.Net.Integration
         {
             try
             {
-                _client.DeleteSpaceAsync(SpaceId);
+                _client.DeleteSpace(SpaceId);
             }
             catch(Exception)
             {
@@ -540,7 +540,7 @@ namespace Contentful.Net.Integration
             var requestUrl = request.RequestUri.ToString();
 
             requestUrl = requestUrl
-                .Replace("https://api.contentful.com/", "http://127.0.0.1:5000/");
+                .Replace("https://api.contentful.com/", "http://localhost:62933/");
 
             request.RequestUri = new Uri(requestUrl);
 
