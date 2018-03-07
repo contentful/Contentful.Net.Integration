@@ -540,7 +540,7 @@ namespace Contentful.Net.Integration
             var requestUrl = request.RequestUri.ToString();
 
             requestUrl = requestUrl
-                .Replace("https://api.contentful.com/", "http://localhost:62933/");
+                .Replace("https://api.contentful.com/", "http:/127.0.0.1:5000/");
 
             request.RequestUri = new Uri(requestUrl);
 
