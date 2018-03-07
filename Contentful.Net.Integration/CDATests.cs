@@ -369,7 +369,7 @@ namespace Contentful.Net.Integration
         {
             if(Environment.GetEnvironmentVariable("CONTENTFUL_RUN_WITHOUT_PROXY") == "true")
             {
-                //return await base.SendAsync(request, cancellationToken);
+                return await base.SendAsync(request, cancellationToken);
             }
 
             var requestUrl = request.RequestUri.ToString();

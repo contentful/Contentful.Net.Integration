@@ -534,13 +534,13 @@ namespace Contentful.Net.Integration
         {
             if (Environment.GetEnvironmentVariable("CONTENTFUL_RUN_WITHOUT_PROXY") == "true")
             {
-                return await base.SendAsync(request, cancellationToken);
+                //return await base.SendAsync(request, cancellationToken);
             }
 
             var requestUrl = request.RequestUri.ToString();
 
             requestUrl = requestUrl
-                .Replace("https://api.contentful.com/", "http:/127.0.0.1:5000/");
+                .Replace("https://api.contentful.com/", "http://127.0.0.1:5000/");
 
             request.RequestUri = new Uri(requestUrl);
 
