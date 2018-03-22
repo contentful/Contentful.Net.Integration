@@ -183,6 +183,25 @@ namespace Contentful.Net.Integration
         }
 
         [Fact]
+        [Order(85)]
+        public async Task CreateEntryWithoutId()
+        {
+            var entry = new Entry<dynamic>();
+
+            entry.Fields = new JObject
+            (
+                new JProperty("field1", new JObject(new JProperty("en-US", "bla"))),
+                new JProperty("field2", new JObject(new JProperty("en-US", "blue")))
+            );
+
+            entry = await _client.CreateEntry(entry, contentTypeId: _contentTypeId);
+
+            Assert.Equal("bla", entry.Fields.field1["en-US"].ToString());
+
+            await _client.DeleteEntry(entry.SystemProperties.Id, entry.SystemProperties.Version.Value);
+        }
+
+        [Fact]
         [Order(90)]
         public async Task GetAllEntries()
         {
@@ -286,6 +305,32 @@ namespace Contentful.Net.Integration
         }
 
         [Fact]
+        [Order(155)]
+        public async Task CreateAssetWithoutId()
+        {
+            var asset = new ManagementAsset();
+
+            asset.Title = new Dictionary<string, string>()
+            {
+                { "en-US", "AssetMaster" }
+            };
+            asset.Files = new Dictionary<string, File>
+            {
+                { "en-US", new File()
+                    {
+                        ContentType ="image/jpeg",
+                        FileName = "moby.png",
+                        UploadUrl = "https://robertlinde.se/assets/top/moby-top.png"
+                    }
+                }
+            };
+
+            var createdAsset = await _client.CreateAsset(asset);
+
+            Assert.Equal("AssetMaster", createdAsset.Title["en-US"]);
+        }
+
+        [Fact]
         [Order(160)]
         public async Task GetAsset()
         {
@@ -342,8 +387,6 @@ namespace Contentful.Net.Integration
 
             Assert.Equal("AssetMaster", asset.Title["en-US"]);
         }
-
-        
 
         [Fact]
         [Order(220)]
@@ -534,7 +577,7 @@ namespace Contentful.Net.Integration
         {
             if (Environment.GetEnvironmentVariable("CONTENTFUL_RUN_WITHOUT_PROXY") == "true")
             {
-                //return await base.SendAsync(request, cancellationToken);
+                return await base.SendAsync(request, cancellationToken);
             }
 
             var requestUrl = request.RequestUri.ToString();
