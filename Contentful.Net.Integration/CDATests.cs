@@ -340,6 +340,15 @@ namespace Contentful.Net.Integration
             Assert.Equal("gray", res.First().color.ToString());
         }
 
+        [Fact]
+        public async Task GetEntriesByLinksToEntry()
+        {
+            var res = await _client.GetEntries(QueryBuilder<dynamic>.New.ContentTypeIs("cat").LinksToEntry("nyancat"));
+
+            Assert.Single(res);
+            Assert.Equal("gray", res.First().color.ToString());
+        }
+
         [Theory]
         [InlineData(MimeTypeRestriction.Image, 4)]
         [InlineData(MimeTypeRestriction.Archive, 0)]

@@ -506,6 +506,78 @@ namespace Contentful.Net.Integration
         }
 
         [Fact]
+        [Order(620)]
+        public async Task GetExtensions()
+        {
+            var res = await _client.GetAllExtensions();
+
+            Assert.Empty(res);
+        }
+
+        [Fact]
+        [Order(630)]
+        public async Task CreateExtension()
+        {
+            var extension = new UiExtension
+            {
+                Name = "Test",
+                FieldTypes = new List<string> { SystemFieldTypes.Boolean },
+                Sidebar = false,
+                Src = "https://robertlinde.se"
+            };
+
+            var res = await _client.CreateExtension(extension);
+
+            Assert.Equal("Test", res.Name);
+        }
+
+        [Fact]
+        [Order(640)]
+        public async Task UpdateExtension()
+        {
+            var extension = new UiExtension
+            {
+                Name = "Test2",
+                FieldTypes = new List<string> { SystemFieldTypes.Boolean },
+                Sidebar = false,
+                Src = "https://robertlinde.se",
+                SystemProperties = new SystemProperties
+                {
+                    Id = "test"
+                }
+            };
+
+            var res = await _client.CreateOrUpdateExtension(extension);
+
+            Assert.Equal("Test2", res.Name);
+        }
+
+        [Fact]
+        [Order(650)]
+        public async Task GetExtension()
+        {
+            var res = await _client.GetExtension("test");
+
+            Assert.Equal("Test2", res.Name);
+        }
+
+        [Fact]
+        [Order(660)]
+        public async Task DeleteExtension()
+        {
+           await _client.DeleteExtension("test");
+        }
+
+        [Fact]
+        [Order(660)]
+        public async Task GetOrganizations()
+        {
+           var res = await _client.GetOrganizations();
+
+            Assert.NotEmpty(res);
+        }
+
+        [Fact]
         [Order(700)]
         public async Task UnpublishContentType()
         {
