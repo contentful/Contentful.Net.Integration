@@ -22,6 +22,8 @@ namespace Contentful.Net.Integration
         private ContentfulManagementClient _client;
         private string _spaceId = "";
         private string _contentTypeId = "contenttype";
+        private string _roleId = "";
+        private string _environmentId = "some-env";
 
         public ContentfulCMATests(SpaceFixture fixture)
         {
@@ -578,7 +580,237 @@ namespace Contentful.Net.Integration
         }
 
         [Fact]
+        [Order(670)]
+        public async Task GetEditorInterfaces()
+        {
+            var res = await _client.GetEditorInterface(_contentTypeId);
+
+            Assert.Equal(2, res.Controls.Count);
+        }
+
+        [Fact]
+        [Order(680)]
+        public async Task UpdateEditorInterfaces()
+        {
+            var ei = await _client.GetEditorInterface(_contentTypeId);
+
+            var res = await _client.UpdateEditorInterface(ei, _contentTypeId, ei.SystemProperties.Version.Value);
+            Assert.Equal(2, res.Controls.Count);
+        }
+
+        [Fact]
+        [Order(690)]
+        public async Task GetRoles()
+        {
+            var res = await _client.GetAllRoles();
+            _roleId = res.First().SystemProperties.Id;
+            Assert.Equal(7, res.Count());
+        }
+
+        [Fact]
         [Order(700)]
+        public async Task CreateRole()
+        {
+            var role = new Role
+            {
+                Name = "Some name",
+                Description = "Some description",
+            };
+
+            await Assert.ThrowsAsync<ContentfulException>(async () => { await _client.CreateRole(role); });
+        }
+
+        [Fact]
+        [Order(710)]
+        public async Task GetRole()
+        {
+            var allroles = await _client.GetAllRoles();
+            _roleId = allroles.First().SystemProperties.Id;
+            var res = await _client.GetRole(_roleId);
+
+            Assert.Equal(allroles.First().Name, res.Name);
+            res.Name = "Author2";
+
+            var updated = await _client.UpdateRole(res);
+
+            await _client.DeleteRole(updated.SystemProperties.Id);
+        }
+
+        [Fact]
+        [Order(720)]
+        public async Task GetSnapshotsForContentType()
+        {
+            var snapshots = await _client.GetAllSnapshotsForContentType(_contentTypeId);
+
+            var snapshot = await _client.GetSnapshotForContentType(snapshots.First().SystemProperties.Id, _contentTypeId);
+
+            Assert.NotNull(snapshot);
+        }
+
+        [Fact]
+        [Order(720)]
+        public async Task GetSnapshotsForEntry()
+        {
+
+            var entry = new Entry<dynamic>();
+
+            entry.Fields = new JObject
+            (
+                new JProperty("field1", new JObject(new JProperty("en-US", "bla"))),
+                new JProperty("field2", new JObject(new JProperty("en-US", "blue")))
+            );
+
+            entry = await _client.CreateEntry(entry, contentTypeId: _contentTypeId);
+
+            entry.Fields = new JObject
+            (
+                new JProperty("field1", new JObject(new JProperty("en-US", "bla2"))),
+                new JProperty("field2", new JObject(new JProperty("en-US", "blue")))
+            );
+
+            entry = await _client.PublishEntry(entry.SystemProperties.Id, version: entry.SystemProperties.Version.Value);
+
+            var snapshots = await _client.GetAllSnapshotsForEntry(entry.SystemProperties.Id);
+
+            var snapshot = await _client.GetSnapshotForEntry(snapshots.First().SystemProperties.Id, entry.SystemProperties.Id);
+
+            Assert.NotNull(snapshot);
+
+            await _client.UnpublishEntry(entry.SystemProperties.Id, entry.SystemProperties.Version.Value);
+
+            await _client.DeleteEntry(entry.SystemProperties.Id, entry.SystemProperties.Version.Value);
+        }
+
+        [Fact]
+        [Order(720)]
+        public async Task GetSpaceMemberships()
+        {
+            var sm = await _client.GetSpaceMemberships();
+
+            Assert.NotEmpty(sm);
+        }
+
+        [Fact]
+        [Order(730)]
+        public async Task CreateSpaceMembership()
+        {
+            var newMembership = new SpaceMembership();
+
+            newMembership.Admin = true;
+
+            newMembership.User = new User()
+            {
+                SystemProperties = new SystemProperties()
+                {
+                    Id = "4OyBmDxSpgUr9WWv0csvXG",
+                    LinkType = "User",
+                    Type = "Link"
+                }
+            };
+
+            await Assert.ThrowsAsync<ContentfulException>(async () => await _client.CreateSpaceMembership(newMembership));
+        }
+
+        [Fact]
+        [Order(720)]
+        public async Task GetSpaceMembership()
+        {
+            var allMemberships = await _client.GetSpaceMemberships();
+            var allroles = await _client.GetAllRoles();
+
+            var singleMembership = await _client.GetSpaceMembership(allMemberships.First().SystemProperties.Id);
+
+            singleMembership = await _client.UpdateSpaceMembership(singleMembership);
+
+            await Assert.ThrowsAsync<ContentfulException>(async () => await _client.DeleteSpaceMembership("XXX"));
+
+            Assert.NotNull(singleMembership);
+        }
+
+        [Fact]
+        [Order(730)]
+        public async Task GetAccessTokens()
+        {
+            var accessTokens = await _client.GetAllManagementTokens();
+
+            Assert.NotEmpty(accessTokens);
+        }
+
+        [Fact]
+        [Order(740)]
+        public async Task CreateAccessToken()
+        {
+            var token = new ManagementToken
+            {
+                Name = "Token name",
+                Scopes = new List<string> {
+                    SystemManagementScopes.Manage
+                }
+            };
+
+            var accessToken = await _client.CreateManagementToken(token);
+
+            Assert.Equal("Token name", accessToken.Name);
+
+            token = await _client.GetManagementToken(accessToken.SystemProperties.Id);
+
+            await _client.RevokeManagementToken(accessToken.SystemProperties.Id);
+        }
+
+        [Fact]
+        [Order(750)]
+        public async Task GetCurrentUser()
+        {
+            var user = await _client.GetCurrentUser();
+
+            Assert.NotNull(user);
+        }
+
+        [Fact]
+        [Order(740)]
+        public async Task GetEnvironments()
+        {
+            var envs = await _client.GetEnvironments();
+
+            Assert.NotEmpty(envs);
+        }
+
+        [Fact]
+        [Order(750)]
+        public async Task CreateEnvironment()
+        {
+            var env = await _client.CreateEnvironment("useless");
+
+            Assert.NotNull(env);
+        }
+
+        [Fact]
+        [Order(760)]
+        public async Task CreateEnvironmentById()
+        {
+            var env = await _client.CreateOrUpdateEnvironment(_environmentId, _environmentId);
+
+            Assert.NotNull(env);
+        }
+
+        [Fact]
+        [Order(770)]
+        public async Task GetEnvironment()
+        {
+            var env = await _client.GetEnvironment(_environmentId);
+
+            Assert.NotNull(env);
+        }
+
+        [Fact]
+        [Order(780)]
+        public async Task DeleteEnvironment()
+        {
+            await _client.DeleteEnvironment(_environmentId);
+        }
+
+        [Fact]
+        [Order(900)]
         public async Task UnpublishContentType()
         {
             //It seems we need to give the API a chance to catch up...
@@ -593,7 +825,7 @@ namespace Contentful.Net.Integration
         }
 
         [Fact]
-        [Order(720)]
+        [Order(920)]
         public async Task DeleteContentType()
         {
             await _client.DeleteContentType(_contentTypeId);
