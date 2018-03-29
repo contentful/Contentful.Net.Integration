@@ -4,6 +4,7 @@ using Contentful.Core.Errors;
 using Contentful.Core.Models;
 using Contentful.Core.Models.Management;
 using Contentful.Net.CMA;
+using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
@@ -470,6 +471,14 @@ namespace Contentful.Net.Integration
             webHook = await _client.GetWebhook(updatedHook.SystemProperties.Id);
 
             Assert.Equal("Dustin Hoffman", webHook.Name);
+
+            var calls = await _client.GetWebhookCallDetailsCollection(webHook.SystemProperties.Id);
+
+            Assert.Empty(calls);
+
+            await Assert.ThrowsAsync<JsonSerializationException>(async () => await _client.GetWebhookCallDetails("XXX", webHook.SystemProperties.Id));
+
+            var health = await _client.GetWebhookHealth(webHook.SystemProperties.Id);
 
             await _client.DeleteWebhook(updatedHook.SystemProperties.Id);
         }

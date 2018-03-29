@@ -343,7 +343,7 @@ namespace Contentful.Net.Integration
         [Fact]
         public async Task GetEntriesByLinksToEntry()
         {
-            var res = await _client.GetEntries(QueryBuilder<dynamic>.New.ContentTypeIs("cat").LinksToEntry("nyancat"));
+            var res = await _client.GetEntries(QueryBuilder<dynamic>.New.LinksToEntry("nyancat"));
 
             Assert.Single(res);
             Assert.Equal("gray", res.First().color.ToString());
