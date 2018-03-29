@@ -815,6 +815,15 @@ namespace Contentful.Net.Integration
         [Order(780)]
         public async Task DeleteEnvironment()
         {
+            var env = await _client.GetEnvironment(_environmentId);
+            var count = 0;
+            while(env.SystemProperties.Status.SystemProperties.Id != "ready" && count < 20)
+            {
+                Thread.Sleep(3000);
+                env = await _client.GetEnvironment(_environmentId);
+                count++;
+            }
+
             await _client.DeleteEnvironment(_environmentId);
         }
 
