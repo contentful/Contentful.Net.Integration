@@ -476,7 +476,7 @@ namespace Contentful.Net.Integration
 
             Assert.Empty(calls);
 
-            await Assert.ThrowsAsync<JsonSerializationException>(async () => await _client.GetWebhookCallDetails("XXX", webHook.SystemProperties.Id));
+            await Assert.ThrowsAsync<ContentfulException>(async () => await _client.GetWebhookCallDetails("XXX", webHook.SystemProperties.Id));
 
             var health = await _client.GetWebhookHealth(webHook.SystemProperties.Id);
 
